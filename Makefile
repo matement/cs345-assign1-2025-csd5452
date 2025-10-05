@@ -6,7 +6,7 @@ CFLAGS = -Wall -Wextra -std=c11 -g
 TARGET = hy345sh
 
 # Source files
-SRCS = hy345sh.c
+SRCS = hy345sh.c functions.c
 
 # Object files
 OBJS = $(SRCS:.c=.o)
@@ -26,7 +26,7 @@ $(TARGET): $(OBJS)
 
 # Clean up build files
 clean:
-	del /Q *.o $(TARGET)
+	rm -rf $(TARGET) $(OBJS)
 
 # Phony targets
 .PHONY: all clean

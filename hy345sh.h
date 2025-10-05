@@ -1,10 +1,16 @@
+#ifndef HY345SH_H
+#define HY345SH_H
+
+#define _XOPEN_SOURCE 700
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <stddef.h>
-#ifndef HY345SH_H
-#define HY345SH_H
+#include <limits.h>
+#include <string.h>
 
-int command_prompt();
 
+char* command_prompt();
+
+void execute(char** args);
 #endif // HY345SH_H
