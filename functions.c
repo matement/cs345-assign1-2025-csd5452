@@ -62,7 +62,7 @@ char* command_prompt(){
 
     char* prompt = malloc(PATH_MAX + 128);
     if(prompt)
-        snprintf(prompt, PATH_MAX + 128,"%s@%shy345sh:%s$ ", user, am, dir);
+        snprintf(prompt, PATH_MAX + 128,"%s@%s-hy345sh:%s$ ", user, am, dir);
     else{
         printf("malloc failed\n Exit");
         exit(-1);
