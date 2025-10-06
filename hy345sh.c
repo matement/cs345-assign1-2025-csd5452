@@ -1,39 +1,27 @@
 #include "hy345sh.h"
 
+#define true 1
+#define false 0
+
 #include <limits.h>
 
 
 int main(){
-   
-    printf(strcat(command_prompt(), "\n"));
-    return 0;
-}
+    char* input = NULL;
+    size_t len = 0;
 
-char* command_prompt(){
-    char cwd[PATH_MAX];
 
-    char* user = getlogin();
-    char* dir = getcwd(cwd, sizeof(cwd));
-    char* am = "csd5452";
+    while(true){
+        printf("%s", command_prompt());
+        ssize_t read = getline(&input, &len, stdin);
 
-    char* prompt = malloc(5*PATH_MAX*sizeof(char));
-    if(prompt){
-        strcat(prompt, user);
-        strcat(prompt, "@");
-        strcat(prompt, am);
-        strcat(prompt, "-hy345sh:");
-        strcat(prompt, dir);
-        strcat(prompt, "$");
+        if(read == -1){
+            printf("Error reading input\n");
+            exit(-1);
+        }
 
+        input[strcspn(input, "\n")] = '\0';
+        parse_input(input);
+        
     }
-    else{
-        printf("malloc failed\n Exit");
-        exit(-1);
-    }
-    return prompt;
-    return 0;
-}
-
-void execute(char** args){
-
 }

@@ -13,4 +13,6 @@
 char* command_prompt();
 
 void execute(char** args);
+
+void parse_input(char* input);
 #endif // HY345SH_H
