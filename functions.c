@@ -1,11 +1,48 @@
 #include "hy345sh.h"
 
 
+void pipeline(char* input){
+
+}
+
 void execute(char** args){
     if(args[0] != NULL){
         char* command = args[0];
-        int pid = fork();
+        char* eq = strchr(command, '=');
 
+        //handle global variables
+        if((eq != NULL) && (eq[0] == '=')){
+                *eq = '\0';
+                char* var = command;
+                char* value = eq + 1;
+                setenv(var, value, 1);
+                return;
+        }
+
+
+        //hande cd input 
+        if(strcmp(command, "cd") == 0){
+            
+            if(args[1] == NULL){
+                char* home = getenv("HOME");
+                if(home == NULL) 
+                    home = "/";
+            
+                if(chdir(home) != 0){
+                    perror("cd");
+                }
+            }
+            else{
+                if(chdir(args[1]) != 0){
+                    perror("cd");
+                }
+            }
+            return;
+            
+        }
+
+        int pid = fork();
+        
         if(pid == 0){
             execvp(command, args);
         }
@@ -16,9 +53,6 @@ void execute(char** args){
             printf("Fork failed\n");
             exit(-1);
         }
-    }
-    else{
-        printf("No command given\n");
     }
 }
 
@@ -39,7 +73,19 @@ void parse_input(char* input){
         token = strtok_r(command, " ", &saveptrtoken);
         /*put all the arguments in an array*/
         while(token != NULL){
-            args[position] = token;
+            if(token[0] == '$'){
+                char* varName = token + 1;
+                char* varValue = getenv(varName);
+                if(varValue){
+                    args[position] = varValue;
+                }
+                else{
+                    args[position] = strdup("");
+                }
+            }
+            else{
+                args[position] = token;
+            }
             position++;
             token = strtok_r(NULL, " ", &saveptrtoken);
         }
