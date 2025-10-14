@@ -6,7 +6,7 @@ void pipeline(char* input){
     char** commands; 
     command = strtok_r(input, "|", &saveptr);
 
-    int n = 0;
+    int n = 1;
     int i = 0;
 
     for(int i = 0; input[i]; i++){
@@ -56,11 +56,11 @@ void pipeline(char* input){
             //tokenize each command in the pipeline
             char* args[100];
             char* argsptr;
-            char* token = strtok_r(commands[i], "\t\n", &argsptr);
+            char* token = strtok_r(commands[i], " \t\n", &argsptr);
             int k = 0;
             while(token != NULL && k<99){
                 args[k++] = token;
-                token = strtok_r(NULL, "\t\n", &argsptr);
+                token = strtok_r(NULL, " \t\n", &argsptr);
             }
             args[k] = NULL;
 
@@ -74,7 +74,7 @@ void pipeline(char* input){
     }
 
     //close all pipes
-    for(int i = 0; i<n; i++){
+    for(int i = 0; i<n-1; i++){
         close(pipes[i][0]);
         close(pipes[i][1]);
     }
