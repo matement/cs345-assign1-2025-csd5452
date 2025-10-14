@@ -1,30 +1,23 @@
 #include "hy345sh.h"
 
 
-void pipeline(char* input) {
+void pipeline(char* input){
+    char* command, saveptr;
+    char** commands; 
+    command = strtok_r(input, "|", &saveptr);
+
     int n = 1;
-    for (int i = 0; input[i]; i++)
-        if (input[i] == '|') n++;
-
-    char** commands = malloc(n * sizeof(char*));
-    if (!commands) {
-        perror("malloc commands");
-        exit(EXIT_FAILURE);
-    }
-
-    // ✅ duplicate input to avoid destroying original
-    char *temp = strdup(input);
-    if (!temp) {
-        perror("strdup");
-        exit(EXIT_FAILURE);
-    }
-
-    // ✅ split input into individual commands
-    char *saveptr;
-    char *command = strtok_r(temp, "|", &saveptr);
     int i = 0;
-    while (command != NULL && i < n) {
-        while (*command == ' ') command++; // trim leading spaces
+
+    for(int i = 0; input[i]; i++){
+        if(input[i] == '|'){
+            n++;
+        }
+    }
+    i=0;
+    commands = malloc(n*sizeof(char*));
+    command = strtok_r(input, "|", &saveptr);
+    while(command != NULL && i<n){
         commands[i++] = command;
         command = strtok_r(NULL, "|", &saveptr);
     }
@@ -95,7 +88,6 @@ void pipeline(char* input) {
         wait(NULL);
 
     free(commands);
-    free(temp);
     free(pipes);
 }
 
