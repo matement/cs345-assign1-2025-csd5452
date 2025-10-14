@@ -2,7 +2,7 @@
 
 
 void pipeline(char* input){
-    char* command, saveptr;
+    char* command, *saveptr;
     char** commands; 
     command = strtok_r(input, "|", &saveptr);
 
