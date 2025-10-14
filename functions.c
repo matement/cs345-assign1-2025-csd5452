@@ -2,7 +2,89 @@
 
 
 void pipeline(char* input){
+    char* command, saveptr;
+    char** commands; 
+    command = strtok_r(input, "|", &saveptr);
 
+    int n = 0;
+    int i = 0;
+
+    for(int i = 0; input[i]; i++){
+        if(input[i] == '|'){
+            n++;
+        }
+    }
+    i=0;
+    commands = malloc(n*sizeof(char*));
+    command = strtok_r(input, "|", &saveptr);
+    while(command != NULL && i<n){
+        commands[i++] = command;
+        command = strtok_r(NULL, "|", &saveptr);
+    }
+
+    int (*pipes)[2];
+    pipes = malloc((n-1)*(sizeof(int[2])));
+
+    for(int i = 0; i<n-1; i++){
+        if(pipe(pipes[i]) == -1){
+            perror("pipe");
+            exit(-1);
+        }
+    }
+
+    for(int i = 0; i<n; i++){
+        pid_t pid = fork();
+
+        if(pid == -1){
+            perror("pid");
+            exit(-1);
+        }
+
+        if(pid == 0){ //child prosses
+            if(i>0){//not first command
+                dup2(pipes[i-1][0], STDIN_FILENO);
+            }
+            if(i<n-1){//not last command
+                dup2(pipes[i][1], STDOUT_FILENO);
+            }
+
+            for(int j = 0; j<n-1; j++){
+                close(pipes[j][0]);
+                close(pipes[j][1]);
+            }
+        
+            //tokenize each command in the pipeline
+            char* args[100];
+            char* argsptr;
+            char* token = strtok_r(commands[i], "\t\n", &argsptr);
+            int k = 0;
+            while(token != NULL && k<99){
+                args[k++] = token;
+                token = strtok_r(NULL, "\t\n", &argsptr);
+            }
+            args[k] = NULL;
+
+
+            if(args[0] == NULL) exit(EXIT_SUCCESS);
+
+            execvp(args[0], args);
+            perror("execvp");
+            exit(EXIT_FAILURE);
+        }
+    }
+
+    //close all pipes
+    for(int i = 0; i<n; i++){
+        close(pipes[i][0]);
+        close(pipes[i][1]);
+    }
+
+    for(int i = 0; i<n; i++){
+        wait(NULL);
+    }
+
+    free(commands);
+    free(pipes);
 }
 
 void execute(char** args){
@@ -63,6 +145,13 @@ void parse_input(char* input){
     char* command = strtok_r(input, ";", &saveptrcommand);
     /*split the string to ;*/
     while(command != NULL){
+
+        if(strchr(command, '|')){
+            pipeline(command);
+            command = strtok_r(NULL, ";", &saveptrcommand);
+            continue;
+        }
+
         char** args = malloc(64 * sizeof(char*));
         char* token;
         int position = 0;
