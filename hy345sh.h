@@ -8,6 +8,9 @@
 #include <stddef.h>
 #include <limits.h>
 #include <string.h>
+#include <sys/types.h>  
+#include <sys/stat.h>   
+#include <fcntl.h>
 
 
 char* command_prompt();
@@ -15,4 +18,5 @@ char* command_prompt();
 void execute(char** args);
 
 void parse_input(char* input);
+
 #endif // HY345SH_H

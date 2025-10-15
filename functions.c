@@ -1,23 +1,27 @@
 #include "hy345sh.h"
 
 
-void pipeline(char* input){
-    char* command, saveptr;
-    char** commands; 
-    command = strtok_r(input, "|", &saveptr);
 
+
+void pipeline(char* input) {
     int n = 1;
-    int i = 0;
+    char *command, *saveptr;
+    for (int i = 0; input[i]; i++)
+        if (input[i] == '|') n++;
 
-    for(int i = 0; input[i]; i++){
-        if(input[i] == '|'){
-            n++;
-        }
+    char** commands = malloc(n * sizeof(char*));
+    if (!commands) {
+        perror("malloc commands");
+        exit(EXIT_FAILURE);
     }
-    i=0;
-    commands = malloc(n*sizeof(char*));
-    command = strtok_r(input, "|", &saveptr);
-    while(command != NULL && i<n){
+
+    //duplicate input 
+    char *temp = strdup(input);
+    
+    command = strtok_r(temp, "|", &saveptr);
+    int i = 0;
+    while (command != NULL && i < n) {
+        while (*command == ' ') command++; 
         commands[i++] = command;
         command = strtok_r(NULL, "|", &saveptr);
     }
@@ -25,23 +29,20 @@ void pipeline(char* input){
     int (*pipes)[2] = NULL;
     if (n > 1) {
         pipes = malloc((n - 1) * sizeof(int[2]));
-        if (!pipes) {
-            perror("malloc pipes");
-            exit(EXIT_FAILURE);
-        }
+        
         for (int i = 0; i < n - 1; i++)
             if (pipe(pipes[i]) == -1) {
                 perror("pipe");
-                exit(EXIT_FAILURE);
+                exit(-1);
             }
     }
 
-    // ✅ create child processes
+    //create child processes
     for (int i = 0; i < n; i++) {
         pid_t pid = fork();
-        if (pid == -1) {
-            perror("fork");
-            exit(EXIT_FAILURE);
+        if(pid<0){
+            perror("pid failed");
+            exit(-1);
         }
 
         if (pid == 0) { // child
@@ -68,15 +69,15 @@ void pipeline(char* input){
             }
             args[k] = NULL;
 
-            if (args[0] == NULL) exit(EXIT_SUCCESS);
+            if (args[0] == NULL) exit(0);
 
             execvp(args[0], args);
             perror("execvp");
-            exit(EXIT_FAILURE);
+            exit(-1);
         }
     }
 
-    // ✅ parent closes pipes and waits
+    //parent closes pipes and waits
     if (n > 1) {
         for (int i = 0; i < n - 1; i++) {
             close(pipes[i][0]);
@@ -88,6 +89,7 @@ void pipeline(char* input){
         wait(NULL);
 
     free(commands);
+    free(temp);
     free(pipes);
 }
 
@@ -95,6 +97,7 @@ void execute(char** args){
     if(args[0] != NULL){
         char* command = args[0];
         char* eq = strchr(command, '=');
+        
 
         //handle global variables
         if((eq != NULL) && (eq[0] == '=')){
@@ -130,6 +133,51 @@ void execute(char** args){
         int pid = fork();
         
         if(pid == 0){
+            int inFd = -1, outFd = -1;
+            
+        for(int i = 0; args[i]!=NULL; i++){
+            if(strcmp(args[i], "<") == 0){
+                if(args[i+1] != NULL){
+                    inFd = open(args[i+1], O_RDONLY);
+                    if(inFd < 0){
+                        perror("<");
+                        exit(-1);
+                    }
+                    dup2(inFd, STDIN_FILENO);
+                    close(inFd);
+                    args[i] = NULL;
+                    break;
+                }
+                else exit(-1);
+            }
+            else if(strcmp(args[i], ">") == 0){
+                if(args[i+1]!=NULL){
+                    outFd = open(args[i+1], O_WRONLY | O_CREAT | O_TRUNC, 0644);
+                    if(outFd<0){
+                        perror(">");
+                        exit(-1);
+                    }
+                    dup2(outFd, STDOUT_FILENO);
+                    close(outFd);
+                    args[i] = NULL;
+                    break;
+                }
+                else exit(-1);
+            }
+            else if(strcmp(args[i], ">>") == 0){
+                if(args[i+1]!= NULL){
+                    outFd = open(args[i+1], O_WRONLY | O_CREAT | O_APPEND, 0644);
+                    if(outFd<0) exit(-1);
+
+                    dup2(outFd, STDOUT_FILENO);
+                    close(outFd);
+                    args[i] = NULL;
+                    break;
+                }
+                else exit(-1);
+            }
+        }
+
             execvp(command, args);
         }
         else if(pid>0){
@@ -155,6 +203,7 @@ void parse_input(char* input){
             command = strtok_r(NULL, ";", &saveptrcommand);
             continue;
         }
+
 
         char** args = malloc(64 * sizeof(char*));
         char* token;
