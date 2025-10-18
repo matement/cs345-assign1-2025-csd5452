@@ -12,7 +12,7 @@ void if_hanlder(char* input){
     char *bodystr = strndup(command+4, bodyLen);
 
     for (int i = 0; bodystr[i]; i++)
-        if (bodystr[i] == '\n') bodystr[i] = ' ';
+        if (bodystr[i] == '\n') bodystr[i] = ' ';   //remove newlines and spaces
 
     int pid = fork();
     int status;
@@ -35,6 +35,40 @@ void if_hanlder(char* input){
     free(bodystr);
 }
 
+void for_handler(char* input){
+    char* varptr = strstr(input, "in");
+    char* tokenptr = strstr(input, "do");
+    char* bodyptr = strstr(input, "done");
+
+    int varlen = varptr - (input+3);
+    char* varraw = strndup(input+3, varlen);
+    char* variable = varraw;
+    while(*variable == ' ' || *variable == '\t') variable++;
+
+    int toklen = tokenptr - (varptr+3);
+    char* tokens = strndup(varptr+3, toklen);
+    for (int i = 0; tokens[i]; i++)
+        if (tokens[i] == '\n' || tokens[i] == '\t') tokens[i] = ' ';
+
+    int bodylen = bodyptr - (tokenptr+2);
+    char* body = strndup(tokenptr+2, bodylen);
+    while (*body == ' ' || *body == '\t' || *body == '\n') body++;
+    for (int i = 0; body[i]; i++)
+        if (body[i] == '\n' || body[i] == '\t') body[i] = ' ';   //remove newlines and spaces
+
+    char* saveptr;
+
+    char* token = strtok_r(tokens, " \t\n", &saveptr);
+
+    while (token != NULL){
+        setenv(variable, token, 1);
+        parse_input(body);
+
+        token = strtok_r(NULL, " \t\n", &saveptr);
+    }
+    
+
+}
 
 void pipeline(char* input) {
     int n = 1;
@@ -129,7 +163,16 @@ void pipeline(char* input) {
 void execute(char** args){
     if(args[0] != NULL){
         char* command = args[0];
-        char* eq = strchr(command, '=');
+        char* eq;
+        int cntr;
+        if(*(command+1) == '='){
+            eq = strchr(command, '=');
+            cntr = 0;
+        }
+        else{    
+            eq = args[1];
+            cntr = 1;
+        }
         
         if(strcmp(command, "exit") == 0){
             printf("Exiting shell\n");
@@ -141,7 +184,12 @@ void execute(char** args){
         if((eq != NULL) && (eq[0] == '=')){
                 *eq = '\0';
                 char* var = command;
-                char* value = eq + 1;
+                char* value;
+                if(cntr == 1)
+                    value = eq+2;
+                else
+                    value = eq+1;
+
                 setenv(var, value, 1);
                 return;
         }
@@ -243,8 +291,13 @@ void parse_input(char* input){
         }
 
         if(strncmp(command, "if", 2) == 0){
-            
             if_hanlder(command);
+            command = strtok_r(NULL, ";", &saveptrcommand);
+            continue;
+        }
+
+        if(strncmp(command, "for", 3) == 0){
+            for_handler(command);
             command = strtok_r(NULL, ";", &saveptrcommand);
             continue;
         }
