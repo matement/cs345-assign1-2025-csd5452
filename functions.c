@@ -1,6 +1,39 @@
 #include "hy345sh.h"
 
+void if_hanlder(char* input){
+    char* command = strstr(input, "then");  //get the condition space
+    char* bodyspace = strstr(input, "fi");   //get the body space
 
+    int condLen = command - (input+3);  
+    char* condition = strndup(input+3, condLen);    
+    while (*condition == ' ' || *condition == '\t') condition++;
+
+    int bodyLen = bodyspace - (command+4);
+    char *bodystr = strndup(command+4, bodyLen);
+
+    for (int i = 0; bodystr[i]; i++)
+        if (bodystr[i] == '\n') bodystr[i] = ' ';
+
+    int pid = fork();
+    int status;
+    if(pid == 0){
+        if (pid == 0) {
+        int code = system(condition);
+        exit(WEXITSTATUS(code));
+}
+    }
+    else if(pid>0){
+        waitpid(pid, &status, 0);
+    }
+    else exit(-1);
+
+    if (WIFEXITED(status) && WEXITSTATUS(status) == 0) {    //if the condition is true then execute body
+        parse_input(bodystr);
+    }
+
+    free(condition);
+    free(bodystr);
+}
 
 
 void pipeline(char* input) {
@@ -97,6 +130,11 @@ void execute(char** args){
     if(args[0] != NULL){
         char* command = args[0];
         char* eq = strchr(command, '=');
+        
+        if(strcmp(command, "exit") == 0){
+            printf("Exiting shell\n");
+            exit(0);
+        }
         
 
         //handle global variables
@@ -204,6 +242,12 @@ void parse_input(char* input){
             continue;
         }
 
+        if(strncmp(command, "if", 2) == 0){
+            
+            if_hanlder(command);
+            command = strtok_r(NULL, ";", &saveptrcommand);
+            continue;
+        }
 
         char** args = malloc(64 * sizeof(char*));
         char* token;

@@ -19,4 +19,8 @@ void execute(char** args);
 
 void parse_input(char* input);
 
+void if_hanlder(char* input);
+
+void for_handler(char* input);
+
 #endif // HY345SH_H
